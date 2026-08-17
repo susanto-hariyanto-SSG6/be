@@ -4,10 +4,15 @@ import com.bankdki.jakone_be.dto.RegisterRequest;
 import com.bankdki.jakone_be.dto.TransactionRequest;
 import com.bankdki.jakone_be.dto.TransactionResponse;
 import com.bankdki.jakone_be.entity.Account;
+import com.bankdki.jakone_be.entity.Mutation;
 import com.bankdki.jakone_be.repository.AccountRepository;
+import com.bankdki.jakone_be.repository.MutationRepository;
 import com.bankdki.jakone_be.strategy.TransactionStrategy;
 
+import jakarta.transaction.Transactional;
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
@@ -18,11 +23,14 @@ import java.util.Random;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final MutationRepository mutationRepository;
     private final Map<String, TransactionStrategy> transactionStrategies;
 
-    public AccountService(AccountRepository accountRepository, 
+    public AccountService(AccountRepository accountRepository,
+                          MutationRepository mutationRepository,
                           Map<String, TransactionStrategy> transactionStrategies) {
         this.accountRepository = accountRepository;
+        this.mutationRepository = mutationRepository;
         this.transactionStrategies = transactionStrategies;
     }
 
@@ -44,8 +52,10 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountNumber));
     }
 
+    @Transactional
     public TransactionResponse processTransaction(String accountNumber, TransactionRequest request) {
-        Account account = getAccountByNumber(accountNumber);
+        Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found: " + accountNumber));
 
         TransactionStrategy strategy = transactionStrategies.get(request.getType().toUpperCase());
         if (strategy == null) {
@@ -55,6 +65,15 @@ public class AccountService {
         strategy.execute(account, request.getAmount());
         accountRepository.save(account);
 
+        Mutation mutation = new Mutation(
+            account.getAccountNumber(),
+            request.getType().toUpperCase(),
+            request.getChannel(),
+            request.getAmount(),
+            account.getBalance()
+        );
+        mutationRepository.save(mutation);
+
         return new TransactionResponse(
             account.getAccountNumber(),
             request.getType().toUpperCase(),
@@ -62,5 +81,9 @@ public class AccountService {
             account.getBalance(),
             LocalDateTime.now()
         );
+    }
+
+    public List<Mutation> getAccountMutations(String accountNumber) {
+        return mutationRepository.findByAccountNumberOrderByCreatedAtDesc(accountNumber);
     }
 }
