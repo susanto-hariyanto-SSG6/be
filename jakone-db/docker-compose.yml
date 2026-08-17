@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jakone-express-db
+    environment:
+      POSTGRES_DB: bank_dki_db
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Automatically executes schema.sql on container first startup
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d bank_dki_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bankdki-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: jakone-db-admin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bankdki.co.id
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - bankdki-network
+
+networks:
+  bankdki-network:
+    name: bankdki-network # Named external-capable network
+    driver: bridge
+
+volumes:
+  pgdata:
