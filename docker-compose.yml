@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # 1. PostgreSQL Database Service
   postgres:
     image: postgres:16-alpine
     container_name: jakone-express-db
@@ -12,16 +13,17 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Automatically executes schema.sql on container first startup
-      - ./init:/docker-entrypoint-initdb.d
+      # Mounts schema SQL from jakone-db
+      - ./jakone-db/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev_user -d bank_dki_db"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - bankdki-network
+      - app-network
 
+  # 2. pgAdmin Management UI
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: jakone-db-admin
@@ -33,11 +35,29 @@ services:
     depends_on:
       - postgres
     networks:
-      - bankdki-network
+      - app-network
+
+  # 3. Spring Boot Middleware Backend
+  backend:
+    build:
+      context: ./jakone-be
+      dockerfile: Dockerfile
+    container_name: springboot-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Connects to 'postgres' container using internal Docker DNS
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/bank_dki_db
+      - SPRING_DATASOURCE_USERNAME=dev_user
+      - SPRING_DATASOURCE_PASSWORD=dev_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
 
 networks:
-  bankdki-network:
-    name: bankdki-network # Named external-capable network
+  app-network:
     driver: bridge
 
 volumes:
