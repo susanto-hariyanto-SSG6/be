@@ -1,0 +1,7 @@
+{
+    "accountNumber": "DKI-1000001",
+    "transactionType": "DEPOSIT",
+    "amount": 250000.00,
+    "newBalance": 3000000.00,
+    "timestamp": "2026-08-18T10:02:04.075458362"
+}

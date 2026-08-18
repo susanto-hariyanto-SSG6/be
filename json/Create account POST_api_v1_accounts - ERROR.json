@@ -1,0 +1,8 @@
+{
+    "timestamp": "2026-08-18T10:00:17.274143194",
+    "status": 400,
+    "error": "Validation Failed",
+    "fieldErrors": {
+        "initialBalance": "Initial balance is required"
+    }
+}

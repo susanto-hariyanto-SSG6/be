@@ -1,0 +1,7 @@
+{
+    "accountNumber": "DKI-1000001",
+    "transactionType": "WITHDRAWAL",
+    "amount": 200000.00,
+    "newBalance": 2800000.00,
+    "timestamp": "2026-08-18T10:04:16.092213528"
+}

@@ -1,0 +1,8 @@
+{
+    "timestamp": "2026-08-18T10:03:07.615639869",
+    "status": 400,
+    "error": "Validation Failed",
+    "fieldErrors": {
+        "channel": "Channel must be CASH, TRANSFER, or QRIS"
+    }
+}
